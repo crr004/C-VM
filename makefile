@@ -12,10 +12,13 @@ cvmi: ./src/cvmi.c ./src/cvm.c
 	$(CC) $(CFLAGS) -o cvmi ./src/cvmi.c $(LIBS)
 
 .PHONY: examples
-examples: ./examples/fib.cvm ./examples/123.cvm
+examples: ./examples/fib.cvm ./examples/123.cvm ./examples/label.cvm
 
 ./examples/fib.cvm: cvmasm ./examples/fib.cvmasm cvmasm
 	./cvmasm ./examples/fib.cvmasm ./examples/fib.cvm 
 
 ./examples/123.cvm: cvmasm ./examples/123.cvmasm cvmasm
 	./cvmasm ./examples/123.cvmasm ./examples/123.cvm
+
+./examples/label.cvm: cvmasm ./examples/label.cvmasm cvmasm
+	./cvmasm ./examples/label.cvmasm ./examples/label.cvm

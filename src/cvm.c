@@ -13,6 +13,7 @@
 #define CVM_EXECUTION_LIMIT 69
 #define MAX_LABELS 100
 #define MAX_LABEL_LENGTH 30
+#define MAX_JUMPS 110
 
 typedef enum{
     ERROR_OK = 0,
@@ -48,12 +49,20 @@ const char *error_as_cstr(Error error){
 typedef int64_t Word;
 
 typedef struct {
-    char name[MAX_LABEL_LENGTH];
+    char *name[MAX_LABEL_LENGTH];
     Word addr;
 } Label;
 
 Label label_table[MAX_LABELS];
 size_t label_count = 0;
+
+typedef struct{
+    char *label[MAX_LABEL_LENGTH];
+    Word addr;
+} Jump;
+
+Jump jump_table[MAX_JUMPS];
+size_t jump_count = 0;
 
 typedef enum {
     INST_NOP = 0,
@@ -162,7 +171,9 @@ Error cvm_ex_inst(Cvm *cvm){
             cvm->ip++;
             break;
         case INST_DUP:
-            if(cvm->stack_size >= CVM_STACK_CAPACITY)
+            if(cvm->stack_size >= CVM_STACK_CAPACITY){
+                return ERROR_STACK_OVERFLOW;
+            }
             if(cvm->stack_size - inst.operand <= 0){
                 return ERROR_STACK_UNDERFLOW;
             }
@@ -344,10 +355,31 @@ int string_view_to_int(String_view sv){
     return result;
 }
 
-Inst cvm_translate_line(String_view line){
+int string_view_is_label(String_view sv){
+    return sv.count > 0 && sv.data[sv.count - 1] == ':';
+}
+
+Inst cvm_translate_line(String_view line, size_t program_size){
     line = string_view_trim_left(line);
     String_view inst_name = string_view_chop_by_delim(&line,' ');
-    if(string_view_eq(inst_name, cstr_as_string_view("push"))){
+    if(string_view_is_label(inst_name)){
+        if(label_count >= MAX_LABELS){
+            fprintf(stderr, "ERROR: Too many labels\n");
+            exit(1);
+        }
+        if(inst_name.count >= MAX_LABEL_LENGTH){
+            fprintf(stderr, "ERROR: Label too long\n");
+            exit(1);
+        }
+        inst_name.count -= 1;
+        inst_name = string_view_trim_right(inst_name);
+        label_table[label_count].addr = program_size;
+        memcpy(label_table[label_count].name, inst_name.data, inst_name.count);
+        label_table[label_count].name[inst_name.count] = '\0';
+        label_count++;
+        return MAKE_INST_NOP;
+    }
+    else if(string_view_eq(inst_name, cstr_as_string_view("push"))){
         line = string_view_trim_left(line);
         int operand = string_view_to_int(string_view_trim_right(line));
         return (Inst) MAKE_INST_PUSH(operand);
@@ -370,13 +402,38 @@ Inst cvm_translate_line(String_view line){
         return (Inst) MAKE_INST_DIV;
     }
     else if(string_view_eq(inst_name, cstr_as_string_view("jmp"))){
+        if(jump_count >= MAX_JUMPS){
+            fprintf(stderr, "ERROR: Too many jumps\n");
+            exit(1);
+        }
         line = string_view_trim_left(line);
-        int operand = string_view_to_int(string_view_trim_right(line));
-        return (Inst) MAKE_INST_JMP(operand);
+        String_view operand = string_view_trim_right(line);
+        jump_table[jump_count].addr = program_size;
+        memcpy(jump_table[jump_count].label, operand.data, operand.count);
+        jump_table[jump_count].label[operand.count] = '\0';
+        jump_count++;
+        int place_holder = program_size;
+        return (Inst) MAKE_INST_JMP(place_holder);
+    }
+    else if(string_view_eq(inst_name, cstr_as_string_view("halt"))){
+        return (Inst) MAKE_INST_HALT;
     }
     else{
         fprintf(stderr, "ERROR: unknown operation '%.*s'", (int) inst_name.count, inst_name.data);
         exit(1);
+    }
+}
+
+void cvm_translate_jumps(Inst *program, size_t program_size){
+    for(size_t i = 0; i < program_size; i++){
+        if(program[i].type == INST_JMP){
+            for(size_t j = 0; j < jump_count; j++){
+                if(strcmp((const char *) jump_table[j].label, (const char *) label_table[j].name) == 0){
+                    program[i].operand = label_table[j].addr;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -388,8 +445,10 @@ size_t cvm_translate_source(String_view source, Inst *program, size_t program_ca
         if(line.count <= 0){
             continue;
         }
-        program[program_size++] = cvm_translate_line(line);
+        program[program_size] = cvm_translate_line(line, program_size);
+        program_size+=1;
     }
+    cvm_translate_jumps(program, program_size);
     return program_size;
 }
 
