@@ -3,13 +3,16 @@ CFLAGS=-Wall -Wextra -Wswitch-enum -std=c11 -pedantic
 LIBS=
 
 .PHONY: all
-all:  cvmasm cvmi
+all:  cvmasm cvmi decvmasm
 
 cvmasm: ./src/cvmasm.c ./src/cvm.c
 	$(CC) $(CFLAGS) -o cvmasm ./src/cvmasm.c $(LIBS)
 
 cvmi: ./src/cvmi.c ./src/cvm.c
 	$(CC) $(CFLAGS) -o cvmi ./src/cvmi.c $(LIBS)
+
+decvmasm: ./src/decvmasm.c ./src/cvm.c
+	$(CC) $(CFLAGS) -o decvmasm ./src/decvmasm.c $(LIBS)
 
 .PHONY: examples
 examples: ./examples/fib.cvm ./examples/123.cvm ./examples/label.cvm
