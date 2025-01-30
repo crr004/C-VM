@@ -272,8 +272,6 @@ void cvm_dump_stack(FILE *stream, const Cvm *cvm){
     fprintf(stream, "\n");
 }
 
-Cvm cvm = {0};
-
 typedef struct {
     size_t count;
     const char *data;
@@ -556,4 +554,14 @@ void cvm_save_program_to_file(Inst *program, size_t program_size, const char *fi
     }
 
     fclose(f);
+}
+
+void cvm_execute_program(Cvm *cvm){
+    for(int i=0; i < CVM_EXECUTION_LIMIT && !cvm->halt; i++){
+        Error error = cvm_ex_inst(cvm);
+        if(error != ERROR_OK){
+            fprintf(stderr, "ERROR: %s\n", error_as_cstr(error));
+            exit(1);
+        }
+    }
 }

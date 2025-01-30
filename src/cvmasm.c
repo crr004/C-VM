@@ -1,5 +1,7 @@
 #include "./cvm.c"
 
+Cvm cvm = {0};
+
 int main(int argc, char *argv[]){
     if(argc < 3){
         fprintf(stderr, "Usage: %s <source.cvmasm> <output.cvm>\n", argv[0]);
