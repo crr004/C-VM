@@ -357,10 +357,17 @@ int string_view_is_label(String_view sv){
     return sv.count > 0 && sv.data[sv.count - 1] == ':';
 }
 
+int string_view_is_comment(String_view sv){
+    return sv.count > 0 && sv.data[0] == '#';
+}
+
 Inst cvm_translate_line(String_view line, size_t program_size){
     line = string_view_trim_left(line);
     String_view inst_name = string_view_chop_by_delim(&line,' ');
-    if(string_view_is_label(inst_name)){
+    if(string_view_is_comment(inst_name)){
+        return MAKE_INST_NOP;
+    }
+    else if(string_view_is_label(inst_name)){
         if(label_count >= MAX_LABELS){
             fprintf(stderr, "ERROR: Too many labels\n");
             exit(1);
