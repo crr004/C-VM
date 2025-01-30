@@ -10,7 +10,6 @@
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 #define CVM_STACK_CAPACITY 1024
 #define CVM_PROGRAM_CAPACITY 1024
-#define CVM_EXECUTION_LIMIT 69
 #define MAX_LABELS 100
 #define MAX_LABEL_LENGTH 30
 #define MAX_JUMPS 110
@@ -23,6 +22,7 @@ typedef enum{
     ERROR_DIV_BY_ZERO,
     ERROR_ILLEGAL_INST_ACCESS,
     ERROR_ILLEGAL_OPERAND,
+    ERROR_OK_NO_INST,
 } Error;
 
 const char *error_as_cstr(Error error){
@@ -41,6 +41,8 @@ const char *error_as_cstr(Error error){
             return "Illegal instruction access";
         case ERROR_ILLEGAL_OPERAND:
             return "Illegal operand";
+        case ERROR_OK_NO_INST:
+            return "Ok, no instruction";
         default:
             assert(0 && "error_as_cstr: Unknown error");
     }
@@ -162,7 +164,7 @@ Error cvm_ex_inst(Cvm *cvm){
     switch(inst.type){
         case INST_NOP:
             cvm->ip++;
-            break;
+            return ERROR_OK_NO_INST;
         case INST_PUSH:
             if(cvm->stack_size >= CVM_STACK_CAPACITY){
                 return ERROR_STACK_OVERFLOW;
@@ -345,10 +347,8 @@ int string_view_eq(String_view a, String_view b){
 
 int string_view_to_int(String_view sv){
     int result = 0;
-    for(size_t i = 0; i < sv.count && isdigit(*sv.data); i++){
+    for(size_t i = 0; i < sv.count && isdigit(*sv.data); i++)
         result = result * 10 + sv.data[i] - '0';
-        i += 1;
-    }
 
     return result;
 }
@@ -513,11 +513,6 @@ String_view slurp_file(const char *file_path){
     }; 
 }
 
-void cvm_bush_inst(Cvm *cvm, Inst inst){
-    assert(cvm->program_size < CVM_PROGRAM_CAPACITY);
-    cvm->program[cvm->program_size++] = inst;
-}
-
 void cvm_load_program_from_memory(Cvm *cvm, const Inst *program, size_t program_size){
     assert(program_size <= CVM_PROGRAM_CAPACITY);
     memcpy(cvm->program, program, sizeof(Inst) * program_size);
@@ -576,12 +571,20 @@ void cvm_save_program_to_file(Inst *program, size_t program_size, const char *fi
     fclose(f);
 }
 
-void cvm_execute_program(Cvm *cvm){
-    for(int i=0; i < CVM_EXECUTION_LIMIT && !cvm->halt; i++){
-        Error error = cvm_ex_inst(cvm);
+Error cvm_execute_program(Cvm *cvm, int lim){
+    Error error;
+    for(int i=0; i < lim && !cvm->halt; i++){
+        error = cvm_ex_inst(cvm);
+
+        if(error == ERROR_OK_NO_INST){
+            i--;
+            error = ERROR_OK;
+            continue;
+        }
+        
         if(error != ERROR_OK){
-            fprintf(stderr, "ERROR: %s\n", error_as_cstr(error));
-            exit(1);
+            break;
         }
     }
+    return error;
 }
