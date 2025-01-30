@@ -357,6 +357,15 @@ int string_view_is_label(String_view sv){
     return sv.count > 0 && sv.data[sv.count - 1] == ':';
 }
 
+int label_dup(String_view label){
+    for(size_t i = 0; i < label_count; i++){
+        if(string_view_eq(label, cstr_as_string_view((const char *) label_table[i].name))){
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int string_view_is_comment(String_view sv){
     return sv.count > 0 && sv.data[0] == '#';
 }
@@ -377,6 +386,10 @@ Inst cvm_translate_line(String_view line, size_t program_size){
             exit(1);
         }
         inst_name.count -= 1;
+        if(label_dup(inst_name)){
+            fprintf(stderr, "ERROR: Duplicated label\n");
+            exit(1);
+        }
         inst_name = string_view_trim_right(inst_name);
         label_table[label_count].addr = program_size;
         memcpy(label_table[label_count].name, inst_name.data, inst_name.count);
