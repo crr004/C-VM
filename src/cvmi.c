@@ -16,7 +16,7 @@ void usage(FILE *stream, const char *program_name){
 
 int main(int argc, char *argv[]){
 
-    int program_limit = 100;
+    int program_limit = -1;
     const char *program_file = NULL;
     const char *program_name = shift_args(&argc, &argv, 1);
 

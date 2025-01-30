@@ -573,11 +573,11 @@ void cvm_save_program_to_file(Inst *program, size_t program_size, const char *fi
 
 Error cvm_execute_program(Cvm *cvm, int lim){
     Error error;
-    for(int i=0; i < lim && !cvm->halt; i++){
+    for(int i=lim; i != 0 && !cvm->halt; i--){
         error = cvm_ex_inst(cvm);
 
         if(error == ERROR_OK_NO_INST){
-            i--;
+            i++;
             error = ERROR_OK;
             continue;
         }
