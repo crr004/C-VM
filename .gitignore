@@ -1,5 +1,8 @@
 *.cvmasm
 cvmi.exe
 cvmasm.exe
+decvmasm.exe
 cvmi
 cvmasm
+decvmasm
+
