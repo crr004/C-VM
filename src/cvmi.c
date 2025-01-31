@@ -11,7 +11,7 @@ char *shift_args(int *argc, char ***argv, int shift){
 }
 
 void usage(FILE *stream, const char *program_name){
-    fprintf(stream, "Usage: %s <program.cvm> [-l limit]\n", program_name);
+    fprintf(stream, "Usage: %s <program.cvm> [-l limit] [-h]\n", program_name);
 }
 
 int main(int argc, char *argv[]){
@@ -37,6 +37,9 @@ int main(int argc, char *argv[]){
                 exit(1);
             }
             program_limit = atoi(shift_args(&argc, &argv, 1));
+        }else if(strcmp(flag, "-h") == 0){
+            usage(stdout, program_name);
+            exit(0);
         }
         else{
             usage(stderr, program_name);

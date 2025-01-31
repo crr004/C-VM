@@ -373,6 +373,13 @@ int string_view_is_comment(String_view sv){
 Inst cvm_translate_line(String_view line, size_t program_size){
     line = string_view_trim_left(line);
     String_view inst_name = string_view_chop_by_delim(&line,' ');
+    String_view op = string_view_chop_by_delim(&line, ' '); // Now line has the in-line comment (if there is any).
+
+    if(line.count > 0 && line.data[0] != '#' && inst_name.data[0] != '#'){ // In-line invalid comment
+        fprintf(stderr, "ERROR: Invalid operation '%.*s'\n", (int) line.count, line.data);
+        exit(1);
+    }
+
     if(string_view_is_comment(inst_name)){
         return MAKE_INST_NOP;
     }
@@ -398,13 +405,13 @@ Inst cvm_translate_line(String_view line, size_t program_size){
         return MAKE_INST_NOP;
     }
     else if(string_view_eq(inst_name, cstr_as_string_view("push"))){
-        line = string_view_trim_left(line);
-        int operand = string_view_to_int(string_view_trim_right(line));
+        op = string_view_trim_left(op);
+        int operand = string_view_to_int(string_view_trim_right(op));
         return (Inst) MAKE_INST_PUSH(operand);
     }
     else if(string_view_eq(inst_name, cstr_as_string_view("dup"))){
-        line = string_view_trim_left(line);
-        int operand = string_view_to_int(string_view_trim_right(line));
+        op = string_view_trim_left(op);
+        int operand = string_view_to_int(string_view_trim_right(op));
         return (Inst) MAKE_INST_DUP(operand);
     } 
     else if(string_view_eq(inst_name, cstr_as_string_view("plus"))){
@@ -424,8 +431,8 @@ Inst cvm_translate_line(String_view line, size_t program_size){
             fprintf(stderr, "ERROR: Too many jumps\n");
             exit(1);
         }
-        line = string_view_trim_left(line);
-        String_view operand = string_view_trim_right(line);
+        op = string_view_trim_left(op);
+        String_view operand = string_view_trim_right(op);
         jump_table[jump_count].addr = program_size;
         memcpy(jump_table[jump_count].label, operand.data, operand.count);
         jump_table[jump_count].label[operand.count] = '\0';
