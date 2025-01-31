@@ -453,9 +453,11 @@ void cvm_translate_jumps(Inst *program, size_t program_size){
     for(size_t i = 0; i < program_size; i++){
         if(program[i].type == INST_JMP){
             for(size_t j = 0; j < jump_count; j++){
-                if(strcmp((const char *) jump_table[j].label, (const char *) label_table[j].name) == 0){
-                    program[i].operand = label_table[j].addr;
-                    break;
+                for(size_t k = 0; k < label_count; k++){
+                    if(strcmp((const char *) jump_table[j].label, (const char *) label_table[k].name) == 0){
+                        program[i].operand = label_table[k].addr;
+                        break;
+                    }
                 }
             }
         }

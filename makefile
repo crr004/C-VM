@@ -15,7 +15,7 @@ decvmasm: ./src/decvmasm.c ./src/cvm.c
 	$(CC) $(CFLAGS) -o decvmasm ./src/decvmasm.c $(LIBS)
 
 .PHONY: examples
-examples: ./examples/fib.cvm ./examples/123.cvm ./examples/label.cvm ./examples/stack.cvm
+examples: ./examples/fib.cvm ./examples/123.cvm ./examples/label.cvm ./examples/stack.cvm ./examples/comsandlabs.cvm
 
 ./examples/fib.cvm: cvmasm ./examples/fib.cvmasm cvmasm
 	./cvmasm ./examples/fib.cvmasm ./examples/fib.cvm 
@@ -28,3 +28,6 @@ examples: ./examples/fib.cvm ./examples/123.cvm ./examples/label.cvm ./examples/
 
 ./examples/stack.cvm: cvmasm ./examples/stack.cvmasm cvmasm
 	./cvmasm ./examples/stack.cvmasm ./examples/stack.cvm
+
+./examples/comsandlabs.cvm: cvmasm ./examples/comsandlabs.cvmasm cvmasm
+	./cvmasm ./examples/comsandlabs.cvmasm ./examples/comsandlabs.cvm
